@@ -13,36 +13,43 @@ npm install @rupertsworld/event-target
 ```ts
 import { EventTarget, defineEvent } from "@rupertsworld/event-target";
 
-interface UserLoginEvent extends Event {
-  userId: string;
-  timestamp: number;
-}
-const UserLoginEvent = defineEvent<UserLoginEvent>("userLogin");
-
-interface UserLogoutEvent extends Event {
+// Define events
+interface UserEvent extends Event {
+  type: "user-login" | "user-logout";
   userId: string;
 }
-const UserLogoutEvent = defineEvent<UserLogoutEvent>("userLogout");
+const UserEvent = defineEvent<UserEvent>();
 
-interface CloseEvent extends Event {}
-const CloseEvent = defineEvent<CloseEvent>("close");
+interface CloseEvent extends Event {
+  type: "close";
+}
+const CloseEvent = defineEvent<CloseEvent>();
 
-type ServerEvent = UserLoginEvent | UserLogoutEvent | CloseEvent;
+// Define union
+type ServerEvent = UserEvent | CloseEvent;
 
+// Create typed EventTarget
 class Server extends EventTarget<ServerEvent> {
   login(userId: string) {
-    this.dispatchEvent(new UserLoginEvent({ userId, timestamp: Date.now() }));
+    this.dispatchEvent(
+      new UserEvent("user-login", { userId })
+    );
+  }
+
+  logout(userId: string) {
+    this.dispatchEvent(new UserEvent("user-logout", { userId }));
   }
 
   close() {
-    this.dispatchEvent(new CloseEvent());
+    this.dispatchEvent(new CloseEvent("close"));
   }
 }
 
 const server = new Server();
 
-server.addEventListener("userLogin", (e) => {
-  console.log(e.userId, e.timestamp);
+// Listeners are fully typed — no annotation needed
+server.addEventListener("user-login", (e) => {
+  console.log(e.userId);
 });
 
 server.addEventListener("close", () => {
@@ -52,20 +59,32 @@ server.addEventListener("close", () => {
 
 ## API
 
-### `defineEvent<TEvent>(type, options?)`
+### `defineEvent<TEvent>()`
 
-Creates an event constructor for `TEvent`.
+Creates a typed event constructor from an interface.
 
-- `TEvent` must extend `Event`
-- Constructor accepts only the non-`Event` properties of `TEvent`
-- Throws at runtime if payload tries to overwrite reserved `Event` fields like `type` or `preventDefault`
+```ts
+interface MyEvent extends Event {
+  type: "my-event";
+  payload: string;
+}
+const MyEvent = defineEvent<MyEvent>();
+
+new MyEvent("my-event", { payload: "hello" });
+new MyEvent("my-event", { payload: "hello", bubbles: true });
+```
+
+- Constructor signature: `(type: TEvent["type"], init?: Props & EventInit)` — `init` is optional when no custom props
+- `type` argument is constrained to the interface's `type` literal
+- `init` accepts custom props plus standard `EventInit` (`bubbles`, `cancelable`, `composed`)
+- Throws at runtime if payload tries to overwrite reserved `Event` fields like `target` or `preventDefault`
 
 ### `EventTarget<TUnion>`
 
 A typed replacement for native `EventTarget`.
 
 - `addEventListener` and `removeEventListener` are typed by event `type`
-- `dispatchEvent` is typed to only accept known event unions
+- `dispatchEvent` only accepts events from the declared union
 - Runtime behavior remains native `EventTarget`
 
 ## Environment Support
