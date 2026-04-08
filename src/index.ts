@@ -83,13 +83,13 @@ export function defineEvent<TEvent extends Event>(): EventConstructor<TEvent> {
   return DefinedEvent as unknown as EventConstructor<TEvent>;
 }
 
-type EventNames<U extends Event> = U extends unknown
+export type EventNames<U extends Event> = U extends unknown
   ? U extends { type: infer T extends string }
     ? T
     : never
   : never;
 
-type EventForType<U extends Event, K extends string> = Extract<U, { type: K }>;
+export type EventForType<U extends Event, K extends string> = Extract<U, { type: K }>;
 
 type NativeEventTarget = InstanceType<typeof globalThis.EventTarget>;
 
