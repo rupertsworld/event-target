@@ -4,6 +4,10 @@
   "type": "module",
   "description": "Typed EventTarget with convenient event type creation",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rupertsworld/event-target.git"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
